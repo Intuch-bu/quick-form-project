@@ -12,26 +12,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
-import { movies } from '@/data/movies'
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-export function validateSurveyForm({ name, email }) {
-  const errors = {}
-  const trimmedName = name.trim()
-  const trimmedEmail = email.trim()
-
-  if (!trimmedName) {
-    errors.name = 'โปรดใส่ชื่อของคุณ'
-  }
-
-  if (!trimmedEmail) {
-    errors.email = 'โปรดใส่อีเมลของคุณ'
-  } else if (!EMAIL_REGEX.test(trimmedEmail)) {
-    errors.email = 'รูปแบบอีเมลไม่ถูกต้อง'
-  }
-
-  return errors
-}
+import { movies } from '@/constants/movies'
+import { validateSurveyForm } from '@/utils/validate'
 
 function RequiredMark() {
   return <span className="text-destructive">*</span>
@@ -40,14 +22,14 @@ function RequiredMark() {
 function MovieSurveyForm({ onSubmit }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [selectedMovie, setSelectedMovie] = useState('avatar')
+  const [selectedMovie, setSelectedMovie] = useState('')
   const [comment, setComment] = useState('')
   const [errors, setErrors] = useState({})
 
   const handleReset = () => {
     setName('')
     setEmail('')
-    setSelectedMovie('avatar')
+    setSelectedMovie('')
     setComment('')
     setErrors({})
   }
@@ -66,8 +48,15 @@ function MovieSurveyForm({ onSubmit }) {
     }
   }
 
+  const handleMovieChange = (value) => {
+    setSelectedMovie(value)
+    if (errors.movie) {
+      setErrors((prev) => ({ ...prev, movie: undefined }))
+    }
+  }
+
   const handleSubmit = () => {
-    const validationErrors = validateSurveyForm({ name, email })
+    const validationErrors = validateSurveyForm({ name, email, selectedMovie })
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
@@ -136,8 +125,9 @@ function MovieSurveyForm({ onSubmit }) {
             </Label>
             <RadioGroup
               value={selectedMovie}
-              onValueChange={setSelectedMovie}
+              onValueChange={handleMovieChange}
               className="items-start gap-3"
+              aria-invalid={!!errors.movie}
             >
               {movies.map((movie) => (
                 <div key={movie.id} className="flex w-full items-start justify-start gap-3 text-left">
@@ -160,6 +150,9 @@ function MovieSurveyForm({ onSubmit }) {
                 </div>
               ))}
             </RadioGroup>
+            {errors.movie && (
+              <p className="text-sm text-destructive">{errors.movie}</p>
+            )}
           </div>
 
           <div className="space-y-2">
