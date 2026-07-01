@@ -12,8 +12,26 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
-
 import { movies } from '@/data/movies'
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+export function validateSurveyForm({ name, email }) {
+  const errors = {}
+  const trimmedName = name.trim()
+  const trimmedEmail = email.trim()
+
+  if (!trimmedName) {
+    errors.name = 'โปรดใส่ชื่อของคุณ'
+  }
+
+  if (!trimmedEmail) {
+    errors.email = 'โปรดใส่อีเมลของคุณ'
+  } else if (!EMAIL_REGEX.test(trimmedEmail)) {
+    errors.email = 'รูปแบบอีเมลไม่ถูกต้อง'
+  }
+
+  return errors
+}
 
 function RequiredMark() {
   return <span className="text-destructive">*</span>
@@ -24,22 +42,45 @@ function MovieSurveyForm({ onSubmit }) {
   const [email, setEmail] = useState('')
   const [selectedMovie, setSelectedMovie] = useState('avatar')
   const [comment, setComment] = useState('')
+  const [errors, setErrors] = useState({})
 
   const handleReset = () => {
     setName('')
     setEmail('')
     setSelectedMovie('avatar')
     setComment('')
+    setErrors({})
+  }
+
+  const handleNameChange = (e) => {
+    setName(e.target.value)
+    if (errors.name) {
+      setErrors((prev) => ({ ...prev, name: undefined }))
+    }
+  }
+
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value)
+    if (errors.email) {
+      setErrors((prev) => ({ ...prev, email: undefined }))
+    }
   }
 
   const handleSubmit = () => {
+    const validationErrors = validateSurveyForm({ name, email })
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors)
+      return
+    }
+
     const movie = movies.find((item) => item.id === selectedMovie)
 
     onSubmit({
-      name,
-      email,
+      name: name.trim(),
+      email: email.trim(),
       movieTitle: movie?.title ?? '',
-      comment,
+      comment: comment.trim(),
     })
   }
 
@@ -64,8 +105,12 @@ function MovieSurveyForm({ onSubmit }) {
               id="name"
               placeholder="กรุณากรอกชื่อของคุณ"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={handleNameChange}
+              aria-invalid={!!errors.name}
             />
+            {errors.name && (
+              <p className="text-sm text-destructive">{errors.name}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -77,8 +122,12 @@ function MovieSurveyForm({ onSubmit }) {
               type="email"
               placeholder="example@email.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleEmailChange}
+              aria-invalid={!!errors.email}
             />
+            {errors.email && (
+              <p className="text-sm text-destructive">{errors.email}</p>
+            )}
           </div>
 
           <div className="space-y-3">
